@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, RequestHandler, NextFunction } from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 
@@ -43,7 +43,7 @@ export const getTopUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const getPosts = async (req: Request, res: Response) => {
+export const getPosts: RequestHandler = async (req, res, next): Promise<void> => {
   try {
     const type = req.query.type as "popular" | "latest";
 
@@ -54,7 +54,8 @@ export const getPosts = async (req: Request, res: Response) => {
       const latestPosts = posts
         .sort((a, b) => b.id - a.id)
         .slice(0, 5);
-      return res.json(latestPosts);
+      res.json(latestPosts);
+      return;
     }
 
     if (type === "popular") {
@@ -66,11 +67,14 @@ export const getPosts = async (req: Request, res: Response) => {
       const maxComments = Math.max(...Object.values(postCommentCount));
       const popularPosts = posts.filter(post => postCommentCount[post.id] === maxComments);
 
-      return res.json(popularPosts);
+      res.json(popularPosts);
+      return;
     }
 
     res.status(400).json({ error: "Invalid" });
+    return;
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch posts" });
+    next(error); 
   }
 };
+
